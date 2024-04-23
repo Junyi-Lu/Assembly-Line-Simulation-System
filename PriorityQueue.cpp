@@ -1,84 +1,82 @@
-/**
- * @author 		Saif Mahmud
- * @id          7808507
- * @version     Jul. 25, 2020
- * @instructor	Ali Neshati
- * @assignment  A02
- */
-#include <iostream>
 #include "PriorityQueue.h"
 #include "Node.h"
 
+#include <iostream>
+
+using namespace std;
 
 PriorityQueue::PriorityQueue() : front(nullptr), back(nullptr), size(0) {}
+int PriorityQueue::getSize() { return size; }
+bool PriorityQueue::isEmpty() { return size == 0; }
 
-int PriorityQueue::getSize(){ return size; }
-bool PriorityQueue::isEmpty()
+void PriorityQueue::enqueue(ListItem *item)
 {
-    return size == 0;
-}
-
-void PriorityQueue::enqueue(Event* item){
-    // special case: adding to empty queue
-
-    if(front == nullptr){
-
+    if (front == nullptr) // empty pq
+    {
         front = new Node(item, nullptr);
         back = front;
-    } else {
-        Node* curr = front;
-        Node* prev;
-        bool posFound = false;
-        while (curr != nullptr && !posFound)
+    }
+    else
+    {
+        Node *newNode = new Node(item, nullptr);
+        Node *currNode = front;
+        Node *prevNode = nullptr;
+        ListItem *currItem = dynamic_cast<ListItem *>(currNode->getItem());
+        ListItem *newItem = dynamic_cast<ListItem *>(item);
+        while (currNode != nullptr && currItem->compareTo(newItem) < 0) //in order to find the correct position
         {
-            if(item->getTime() < dynamic_cast<Event*>(curr->getItem())->getTime())
+            prevNode = currNode;
+            currNode = currNode->getNext();
+            if (currNode != nullptr)
             {
-                posFound = true;
-
-            } else {
-                prev = curr;
-                curr = curr->getNext();
+                currItem = dynamic_cast<ListItem *>(currNode->getItem()); //Keep refreshing curr, check the time, and compare
             }
-            Node* newNode = new Node(item,curr);
-            prev->setNext(newNode);
+        }
+        if (prevNode == nullptr)
+        {
+            newNode->setNext(front);
+            front = newNode;
+        }
+        else
+        {
+            newNode->setNext(currNode);
+            prevNode->setNext(newNode);
+            if (currNode == nullptr)
+            {
+                back = newNode;
+            }
         }
     }
     size++;
-}// enqueue
+}
 
-ListItem *PriorityQueue::dequeue() {
+ListItem *PriorityQueue::dequeue()
+{
     ListItem *theItem = nullptr;
     Node *theNode = front;
-    if(front != nullptr){
-
-        theItem = front->getItem();
-        // special case: removing last item
-        if(front == back){
+    if (front != nullptr)
+    {
+        theItem = front->getItem(); //store the front item
+        if (front == back)          //only one item
+        {
             front = back = nullptr;
-        } else {
+        }
+        else
+        {
             front = front->getNext();
         }
         size--;
-        delete(theNode);
+        delete (theNode);
     }
     return theItem;
-}// dequeue
-
-Event *PriorityQueue::getFront(){
-    Event *theItem = nullptr;
-
-    if(front != nullptr){
-        theItem = dynamic_cast<Event *>(front->getItem());
-    }
-
-    return theItem;
-}// getFront
-// destructor
-PriorityQueue::~PriorityQueue() {}
-
-bool PriorityQueue::posFound() {
-    return false;
 }
 
-
-
+ListItem *PriorityQueue::getFront()
+{
+    ListItem *theItem = nullptr;
+    if (front != nullptr)
+    {
+        theItem = front->getItem();
+    }
+    return theItem;
+}

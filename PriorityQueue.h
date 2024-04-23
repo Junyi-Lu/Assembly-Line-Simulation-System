@@ -1,32 +1,27 @@
-/**
- * @author 		Saif Mahmud
- * @id          7808507
- * @version     Jul. 25, 2020
- * @instructor	Ali Neshati
- * @assignment  A02
- */
-
+// CLASS: PrioirtyQueue
+//
+// Author: junyi lu 7879161
+//
+// REMARKS: data strecture of eventList
+//
+//-----------------------------------------
 #pragma once
 #include "ListItem.h"
-#include "OrderedItem.h"
-#include "Event.h"
 
 class Node;
 
-class PriorityQueue : public ListItem
-    {
+class PriorityQueue
+{
 private:
-    Node *front; // front of PriorityQueue.
-    Node *back; // back of PriorityQueue
-    int size; // size of PriorityQueue.
-public:
-    PriorityQueue(); //constructor
-    int getSize(); // how many elements are in queue?
-    bool isEmpty(); // is queue empty?
-    void enqueue(Event *item); // add item to PriorityQueue.
-    Event * getFront(); // look at first item in PriorityQueue.
-    ListItem *dequeue(); // remove first item from PriorityQueue.
-    ~PriorityQueue(); // destructor
+    Node *front;
+    Node *back;
+    int size;
 
-    bool posFound();
-}; // class Queue
+public:
+    PriorityQueue();
+    int getSize();
+    bool isEmpty();
+    void enqueue(ListItem *item);
+    ListItem *getFront();
+    ListItem *dequeue();
+};

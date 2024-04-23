@@ -1,31 +1,32 @@
-/**
- * @author 		Saif Mahmud
- * @id          7808507
- * @version     Jul. 25, 2020
- * @instructor	Ali Neshati
- * @assignment  A02
- */
 #include "Event.h"
+#include "ProcessArrivalEvent.h"
+#include "TimeOutEvent.h"
 
-Event::Event(int theTime, Simulation *theSim) : eventTime(theTime), sim (theSim) {}
+#include <iostream>
+
+using namespace std;
+
+/**** Event implementation */
+Event::Event(int theTime, Process *theProcess, Simulation *theSim)
+	: eventTime(theTime), process(theProcess), sim(theSim) {}
+
 Event::~Event() {}
+int Event::getTime() { return eventTime; }
 
-int Event::getTime()
+int Event::compareTo(ListItem *other)
 {
-    return eventTime;
+	Event *otherEvent = dynamic_cast<Event *>(other);	  //cast the specific the event
+	int result = this->eventTime - otherEvent->eventTime; //compare the time to determine the sequence in pq
+
+	if (result == 0)
+	{
+		if (ProcessArrivalEvent *arrival = dynamic_cast<ProcessArrivalEvent *>(this))
+		{
+			if (TimeOutEvent *timeout = dynamic_cast<TimeOutEvent *>(other))
+			{
+				return -1;
+			}
+		}
+	}
+	return result;
 }
-void Event::processEvent() {
-
-}
-// returns 0 if the item of parameter is bigger
-int Event::compareTo(OrderedItem *other)
-{
-    int out = 0;
-
-    if(this->getTime() >= dynamic_cast<Event*>(other)->getTime())
-    {
-        out = 1; //means other is smaller
-    }
-
-	return out; // you must implement this.
-}// compareTo

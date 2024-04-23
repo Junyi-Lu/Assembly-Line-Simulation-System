@@ -1,9 +1,6 @@
 #pragma once
 
-//do not edit
-
-
 class ListItem {
 public:
-        virtual ~ListItem();
+	virtual int compareTo(ListItem *other) = 0;
 }; // class ListItem

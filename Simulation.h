@@ -1,63 +1,62 @@
-/**
- * @author 		Saif Mahmud
- * @id          7808507
- * @version     Jul. 25, 2020
- * @instructor	Ali Neshati
- * @assignment  A02
- */
 #pragma once
+
 #include <fstream>
-#include <string.h>
+#include "ListItem.h"
+#include "Process.h"
 using namespace std;
 
-class PriorityQueue; // Priority Queue
-class Queue; // Queue class - provided to you
-class Event; // Event - given to you.
+class PriorityQueue;
+class Queue;
+class Event;
 
-class Simulation {
+class Simulation
+{
 private:
-    ifstream ifile;
-    int simulationTime; // what is the current time of the simulation?
-    int partsType;
-    int mainProducts;
-    int finishedProducts;
-    string oneLine;
-    int gapPos;
-    PriorityQueue *eventList; // priority queue of Events.
-    Queue* productQueue; // queue of partially assembled products (for finishing station).
-    Queue** partQueues; // *array* of queues of parts for the stations.
-    int  mainAssemblyTime; //  how long does the main station take?
-    int  finishingAssemblyTime; //  how long does the main station take?
-	bool mainBusy; // is the main station busy?
-	bool finishingBusy; // is the finishing station busy?
-    int mainDepartureTime;
-    int finDepartureTime;
+	ifstream ifile;
+	int simulationTime;
+	PriorityQueue *eventList;
+	Queue *CPUQueue;
+	Queue *IOQueue;
+	int maxCpuTime;
+	bool cpuBusy;
+	bool ioBusy;
+	int numProcess;
+	Queue *allProcesses;
+
 public:
-    Simulation();
+	Simulation();
 
-	// you need methods to manipulate product and part queues.
-	// [add them here.]
-    void addPart(Event *currEvent);
-    int getSimulationTime();
-    void setSimulationTime(int time);
+	void waitForCPU(ListItem *process);
+	void waitForIO(ListItem *process);
+	int getMaxCPUTime();
+	Process *getCPUProcess();
+	Process *getIOProcess();
+	Process *dequeueCPU();
+	Process *dequeueIO();
+	void increaseNumProcess();
+	void increaseTotalTime(int time);
 
-    // main method for driving the simulation
-    void runSimulation(char *fileName);
+	int getSimulationTime();
+	void setSimulationTime(int time);
 
-	// add an event to event queue.
-	void addEvent (Event*); 
+	void addEvent(Event *);
+	void addProcess(Process *process);
 
-	// read next arrival from file and add it to the event queue. 
-        void getNextArrival();
-	
-	// getters and setters for station statuses.
-	bool isMainBusy();
-	bool isFinishingBusy();
-	void setMainStatus(bool);
-	void setFinishingStatus(bool);
-    void getSummery();
-    void addPartialFinishedProduct();
-    ~Simulation();
+	void getNextArrival();
 
-    void deleteMainPartSet();
-};// class Simulation
+	bool isCPUBusy();
+	bool isIOBusy();
+	void setCPUStatus(bool);
+	void setIOStatus(bool);
+
+	// runSimulation -- start the simulation with the given filename.
+	// Called by main.
+	void runSimulation(char *fileName);
+
+	// summary -- print a summary of all the processes, as shown in the
+	// assignment.  Called by main.
+	void summary();
+
+	// you may need to add more methods
+
+}; // class Simulation

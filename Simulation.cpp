@@ -1,187 +1,163 @@
-/**
- * @author 		Saif Mahmud
- * @id          7808507
- * @version     Jul. 25, 2020
- * @instructor	Ali Neshati
- * @assignment  A02
- */
-#include <iostream>
-#include <climits>
 #include "Simulation.h"
-#include "OrderedItem.h"
-#include "Arrival.h"
 #include "PriorityQueue.h"
 #include "Queue.h"
-#include "MainAssembly.h"
-#include "FinishingAssembly.h"
+#include "Event.h"
+#include "Process.h"
+#include "ProcessArrivalEvent.h"
 
-Simulation::Simulation()
+#include <cstdio>
+#include <cstdlib>
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <iostream>
+#include <iomanip>
+
+using namespace std;
+
+Simulation::Simulation() : simulationTime(0), maxCpuTime(0), cpuBusy(false), ioBusy(false), numProcess(1)
 {
-    finDepartureTime = INT_MAX;
-    mainDepartureTime = INT_MAX;
-    eventList = new PriorityQueue();
-    partQueues = new Queue*[3];
-    mainProducts = 0;
-    finishedProducts = 0;
-    for(int i = 0; i < 3; i++)
-    {
-        partQueues[i] = new Queue();
-    } // all parts queue.
-    productQueue = new Queue();
+    eventList = new PriorityQueue(); // eventlist pq for process event
+    CPUQueue = new Queue();          // store the cpu time
+    IOQueue = new Queue();           //store the io time
+    allProcesses = new Queue();      // store the process
 }
-void Simulation:: runSimulation(char *fileName)
+
+int Simulation::getSimulationTime() { return simulationTime; }
+void Simulation::setSimulationTime(int time) { simulationTime = time; }
+
+void Simulation::runSimulation(char *fileName)
 {
+    Event *theEvent;
     ifile.open(fileName);
-    Event* currEvent;
-
-    if(ifile.is_open())
+    char buffer[100];
+    ifile.getline(buffer, 100);
+    if (!ifile.eof())
     {
-        getline(ifile, oneLine);
-        gapPos = oneLine.find_last_of(" ");
-
-        mainAssemblyTime = stoi(oneLine.substr(0,gapPos));
-        finishingAssemblyTime = stoi(oneLine.substr(gapPos+1));
-
-        setMainStatus(false);
-        setFinishingStatus(false);
-
-        currEvent = new Arrival(mainAssemblyTime, finishingAssemblyTime, this);
-        cout << "MAIN STATION ASSEMBLY TIME: " << mainAssemblyTime <<
-        "; FINISHING STATION ASSEMBLY TIME: " << finishingAssemblyTime << endl;
-        addEvent(currEvent);
-
-
-        while (!eventList->isEmpty())
-        {
-            eventList->dequeue();
-            if(eventList->isEmpty() && !ifile.eof())
-            {
-                getNextArrival();
-                if(!ifile.eof())
-                {
-                    addEvent(new Arrival(getSimulationTime(), partsType, this));
-                    cout << "TIME: "<< getSimulationTime() <<" : EVENT: ARRIVAL : PART P" << partsType << endl;
-                }
-            }
-
-            if(!eventList->isEmpty())
-            {
-                eventList->getFront()->processEvent();
-            }
-
-
-
-            //start main station assembly
-            if(!partQueues[0]->isEmpty() && !partQueues[1]->isEmpty() && !isMainBusy())
-            {
-                mainDepartureTime = simulationTime + mainAssemblyTime;
-                currEvent = new MainAssembly(simulationTime,mainDepartureTime, this);
-                cout << "TIME: "<< simulationTime <<" : EVENT: MAIN-ASSEMBLY START. WILL FINISH AT "
-                     << mainDepartureTime << endl;
-                setMainStatus(true);
-            }
-            //Did main station finished?
-            if(mainDepartureTime <= simulationTime && isMainBusy())
-            {
-                setMainStatus(false);
-                deleteMainPartSet();
-                addPartialFinishedProduct();
-                cout << "TIME: "<< simulationTime <<" : EVENT: MAIN-ASSEMBLY FINISHED."<< endl;
-            }
-
-            //start finishing station assembly
-            if(!productQueue->isEmpty() && !productQueue[2].isEmpty() && !isFinishingBusy())
-            {
-                productQueue->dequeue();
-                finDepartureTime = simulationTime + finishingAssemblyTime;
-                currEvent = new FinishingAssembly(getSimulationTime(),
-                        finDepartureTime, this);
-                cout << "TIME: "<< simulationTime <<" : EVENT: FINISHING ASSEMBLY START. "
-                                                         "WILL BE COMPLETED AT "<<finDepartureTime<< endl;
-                setFinishingStatus(true);
-            }
-
-            //did finishing station assembly completed?
-            if(finDepartureTime <= simulationTime && isFinishingBusy())
-            {
-                setFinishingStatus(false);
-                cout << "TIME: "<< simulationTime
-                     <<" : EVENT: FINISHING ASSEMBLY COMPLETE. FINAL PRODUCT ADDED TO THE QUEUE."<< endl;
-                finishedProducts++;
-            }
-        }//while
-    } else {
-        cout << "Cannot open the file";
-        exit(1);
+        stringstream line(buffer);
+        line >> maxCpuTime; //get the max cpu time
     }
+
+    cout << "Maximum time for one access in CPU is " << maxCpuTime << endl;
+    getNextArrival();
+
+    while (!eventList->isEmpty())
+    {
+        theEvent = (Event *)(eventList->dequeue()); //curr event,meaning to process
+        simulationTime = theEvent->getTime();
+        theEvent->handleEvent(); //Specific handling of specific events
+        delete (theEvent);
+    }
+    ifile.close();
 }
-// read next arrival from file and add it to the event queue.
+
 void Simulation::getNextArrival()
 {
-    getline(ifile, oneLine);
-    if(!ifile.eof())
+    Process *newProcess;
+    char buffer[1000];
+    int arrivalTime;
+    int temp;
+    Event *arrival = NULL;
+    ifile.getline(buffer, 1000);
+    if (!ifile.eof())
     {
-        gapPos = oneLine.find_last_of(" ");
-        setSimulationTime(stoi(oneLine.substr(0,gapPos)));
-        partsType = stoi(oneLine.substr(gapPos+1));
+        stringstream line(buffer);
+        line >> arrivalTime;
+        newProcess = new Process(numProcess, arrivalTime); //get the first process value
+        increaseNumProcess();
+        while (!line.eof())
+        {
+            line >> temp;
+            if (temp > 0) //if input data >0
+            {
+                newProcess->addCPUTime(temp);
+            }
+            else // <0 is io time
+            {
+                temp = abs(temp);
+                newProcess->addIOTime(temp);
+            }
+        }
+
+        arrival = new ProcessArrivalEvent(newProcess, arrivalTime, this); //produce a first event
+        addEvent(arrival);
+        addProcess(newProcess);
     }
 }
-int Simulation::getSimulationTime()
+
+void Simulation::addEvent(Event *theEvent)
 {
-    return this->simulationTime;
-}
-void Simulation::setSimulationTime(int time)
-{
-    this->simulationTime = time;
-}
-// add an event to event queue
-void Simulation::addEvent (Event* event)
-{
-    eventList->enqueue(event);
-}
-// add a part to event queue
-void Simulation::addPart (Event* currEvent)
-{
-    partQueues[partsType]->enqueue(currEvent);
-}
-// getters and setters for station statuses.
-bool Simulation::isMainBusy()
-{
-    return mainBusy;
-}
-bool Simulation::isFinishingBusy()
-{
-    return finishingBusy;
-}
-//true means busy
-void Simulation::setMainStatus(bool value)
-{
-    mainBusy = value;
-}
-//true means busy
-void Simulation::setFinishingStatus(bool value)
-{
-    finishingBusy = value;
-}
-void Simulation::deleteMainPartSet()
-{
-    partQueues[0]->dequeue();
-    partQueues[1]->dequeue();
+    eventList->enqueue(theEvent);
 }
 
-void Simulation::getSummery()
+bool Simulation::isCPUBusy()
 {
-    cout << "Total items assembly completed: " << finishedProducts << endl;
-	float a = simulationTime;
-	float b = finishedProducts;
-    cout << "Total Average time: "<< a/b << "(time units) per product." << endl;
-    cout << "P0 parts left: "<< partQueues[0]->getSize() << endl;
-    cout << "P1 parts left: "<< partQueues[1]->getSize() << endl;
-    cout << "P2 parts left: "<< partQueues[2]->getSize() << endl;
-    cout << "Partial Finished parts left: "<< productQueue->getSize() << endl;
+    return cpuBusy;
 }
 
-void Simulation::addPartialFinishedProduct() {
-    productQueue->enqueue(new Arrival(getSimulationTime(), finishingAssemblyTime, this));
-    mainProducts++;
+bool Simulation::isIOBusy()
+{
+    return ioBusy;
+}
+
+void Simulation::setCPUStatus(bool stat)
+{
+    cpuBusy = stat;
+}
+
+void Simulation::setIOStatus(bool stat)
+{
+    ioBusy = stat;
+}
+
+void Simulation::waitForCPU(ListItem *process)
+{
+    CPUQueue->enqueue(process);
+}
+
+void Simulation::waitForIO(ListItem *process)
+{
+    IOQueue->enqueue(process);
+}
+
+int Simulation::getMaxCPUTime() { return maxCpuTime; }
+
+void Simulation::increaseNumProcess() { numProcess++; }
+
+Process *Simulation::getCPUProcess()
+{
+    return dynamic_cast<Process *>(CPUQueue->getFront());
+}
+
+Process *Simulation::getIOProcess()
+{
+    return dynamic_cast<Process *>(IOQueue->getFront());
+}
+
+Process *Simulation::dequeueCPU()
+{
+    return dynamic_cast<Process *>(CPUQueue->dequeue());
+}
+
+Process *Simulation::dequeueIO()
+{
+    return dynamic_cast<Process *>(IOQueue->dequeue());
+}
+
+void Simulation::addProcess(Process *process)
+{
+    allProcesses->enqueue(process);
+}
+
+void Simulation::summary()
+{
+    cout << " Process   Arrival    Exit    Wait" << endl;
+    cout << "       #      Time    Time    Time" << endl;
+    cout << "------------------------------------" << endl;
+    while (!allProcesses->isEmpty())
+    {
+        Process *curr = dynamic_cast<Process *>(allProcesses->dequeue());
+        cout << "        " << curr->getID() << "          " << curr->getArrivalTime() << "        "
+             << curr->getExitTime() << "        " << curr->getExitTime() - curr->getArrivalTime() - curr->getTotalTime() << endl;
+    }
 }

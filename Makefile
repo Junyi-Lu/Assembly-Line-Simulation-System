@@ -1,50 +1,17 @@
-OBJS	= A2main.o Simulation.o PriorityQueue.o Event.o ListItem.o Node.o OrderedItem.o Queue.o Arrival.o MainAssembly.o Departure.o FinishingAssembly.o
-SOURCE	= A2main.cpp Simulation.cpp PriorityQueue.cpp Event.cpp ListItem.cpp Node.cpp OrderedItem.cpp Queue.cpp Arrival.cpp MainAssembly.cpp Departure.cpp FinishingAssembly.cpp
-HEADER	= Simulation.h PriorityQueue.h Event.h ListItem.h Node.h OrderedItem.h Queue.h Arrival.h MainAssembly.h Departure.h FinishingAssembly.h
-OUT	= A2main
-CC	 = g++
-FLAGS	 = -g -c -Wall -std=c++11
-LFLAGS	 = 
+CC=clang++
+CFLAGS=--std=c++11
 
-all: $(OBJS)
-	$(CC) -g $(OBJS) -o $(OUT) $(LFLAGS)
+objects = Event.o Simulation.o ListItem.o Node.o PriorityQueue.o Queue.o Process.o ProcessArrivalEvent.o StartCPUEvent.o CompleteCPUEvent.o TimeOutEvent.o StartIOEvent.o CompleteIOEvent.o ExitEvent.o TimeItem.o 
 
-A2main.o: A2main.cpp
-	$(CC) $(FLAGS) A2main.cpp 
+# this rule will build A2 as the executable from the object files
+all: A2main.o $(objects)
+	$(CC) $(CFLAGS) -o A2 $< $(objects)
 
-Simulation.o: Simulation.cpp
-	$(CC) $(FLAGS) Simulation.cpp 
+test: Test.o $(objects)
+		$(CC) $(CFLAGS) -o test $< $(objects)
 
-PriorityQueue.o: PriorityQueue.cpp
-	$(CC) $(FLAGS) PriorityQueue.cpp 
-
-Event.o: Event.cpp
-	$(CC) $(FLAGS) Event.cpp 
-
-ListItem.o: ListItem.cpp
-	$(CC) $(FLAGS) ListItem.cpp 
-
-Node.o: Node.cpp
-	$(CC) $(FLAGS) Node.cpp 
-
-OrderedItem.o: OrderedItem.cpp
-	$(CC) $(FLAGS) OrderedItem.cpp 
-
-Queue.o: Queue.cpp
-	$(CC) $(FLAGS) Queue.cpp 
-
-Arrival.o: Arrival.cpp
-	$(CC) $(FLAGS) Arrival.cpp 
-
-MainAssembly.o: MainAssembly.cpp
-	$(CC) $(FLAGS) MainAssembly.cpp 
-
-Departure.o: Departure.cpp
-	$(CC) $(FLAGS) Departure.cpp 
-
-FinishingAssembly.o: FinishingAssembly.cpp
-	$(CC) $(FLAGS) FinishingAssembly.cpp 
-
-
+# this rule will build a .o file from a .cpp file. 
+%.o: %.cpp
+	$(CC) -c -o $@ $< $(CFLAGS)
 clean:
-	rm -f $(OBJS) $(OUT)
+	rm *.o A2 test

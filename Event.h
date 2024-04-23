@@ -1,27 +1,26 @@
-/**
- * @author 		Saif Mahmud
- * @id          7808507
- * @version     Jul. 25, 2020
- * @instructor	Ali Neshati
- * @assignment  A02
- */
 #pragma once
-#include "OrderedItem.h"
-
-
+#include "ListItem.h"
+class Process;
 class Simulation;
 
-/**** Event abstract interface */
-class Event: public OrderedItem {
+class Event : public ListItem
+{
 private:
-        int eventTime; // time of the event.
-protected: 
-        Simulation *sim; // simulation event is a part of.
-public:
-        Event(int theTime, Simulation* sim);
-        virtual void processEvent() = 0; // polymorphic method for events. 
-        virtual ~Event();
-        int getTime(); 
-        int compareTo(OrderedItem *other); // you must implement this.
+	int eventTime;
+	Process *process;
 
-};// class Event
+protected:
+	Simulation *sim;
+
+public:
+	// constructor, with pointer to the process that is being handled, and the simulation.
+	Event(int theTime, Process *theProcess, Simulation *sim);
+
+	// pure virtual method - to handle the current event when it is removed from the queue.
+	virtual void handleEvent() = 0;
+	virtual ~Event();
+	int getTime();
+
+	// compareTo - used to order Events.
+	int compareTo(ListItem *other);
+}; // class Event
